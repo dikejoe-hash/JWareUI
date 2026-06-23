@@ -947,6 +947,8 @@ local function InitJWareUI()
 					end
 
 					local function positionListFrame()
+						-- Defer one frame so AbsolutePosition is populated
+						RunService.RenderStepped:Wait()
 						local dfAbs = DropFrame.AbsolutePosition
 						local dfSz  = DropFrame.AbsoluteSize
 						local px    = dfAbs.X
@@ -963,7 +965,7 @@ local function InitJWareUI()
 
 					local function setExpanded(state)
 						expanded = state
-						if state then positionListFrame() end
+						if state then task.spawn(positionListFrame) end
 						ListFrame.Visible = state
 						Indicator.Text    = state and "▲" or "▼"
 						tween(DropFrame, { BackgroundColor3 = state and Theme.MainColor or COL_ELEM_BG })
@@ -1294,11 +1296,11 @@ local function InitJWareUI()
 					-- Popup panel  (parented to popupGui → always on top)
 					-- ─────────────────────────────────────────────────────────
 					-- Panel dimensions
-					local PANEL_W = 200
-					local PANEL_H = 210
-					local SV_SIZE = 150   -- saturation-value square
-					local HUE_W  = 14    -- hue bar width
-					local PAD    = 8     -- inner padding
+					local PANEL_W = 160
+					local PANEL_H = 165
+					local SV_SIZE = 110   -- saturation-value square
+					local HUE_W  = 12    -- hue bar width
+					local PAD    = 7     -- inner padding
 
 					local PickerPanel = Instance.new("Frame")
 					PickerPanel.Name             = "PickerPanel_" .. cfg.Title
@@ -1426,7 +1428,7 @@ local function InitJWareUI()
 					HexBg.Name             = "HexBg"
 					HexBg.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
 					HexBg.BorderSizePixel  = 0
-					HexBg.Size             = UDim2.fromOffset(SV_SIZE + HUE_W + 6, 22)
+					HexBg.Size             = UDim2.fromOffset(SV_SIZE + HUE_W + 6 + PAD, 22)
 					HexBg.Position         = UDim2.fromOffset(PAD, PAD + 18 + SV_SIZE + 6)
 					HexBg.ZIndex           = 201
 					HexBg.Parent           = PickerPanel
@@ -1459,17 +1461,6 @@ local function InitJWareUI()
 					HexBox.ClearTextOnFocus   = false
 					HexBox.Parent             = HexBg
 
-					-- ── Preview swatch inside panel ────────────────────────────
-					local PreviewBox = Instance.new("Frame")
-					PreviewBox.Name             = "Preview"
-					PreviewBox.BackgroundColor3 = cfg.Default
-					PreviewBox.BorderSizePixel  = 0
-					PreviewBox.Size             = UDim2.fromOffset(PANEL_W - (PAD*2 + SV_SIZE + HUE_W + 6 + 4), 22)
-					PreviewBox.Position         = UDim2.fromOffset(PAD + SV_SIZE + HUE_W + 6 + 4, PAD + 18 + SV_SIZE + 6)
-					PreviewBox.ZIndex           = 201
-					PreviewBox.Parent           = PickerPanel
-					Instance.new("UICorner", PreviewBox).CornerRadius = UDim.new(0, 4)
-					addStroke(PreviewBox, Color3.fromRGB(50,50,50))
 
 					-- ── State ──────────────────────────────────────────────────
 					local hue        = 0
@@ -1527,7 +1518,6 @@ local function InitJWareUI()
 						-- Update swatches
 						Swatch.BackgroundColor3   = selColor
 						PanelStroke.Color         = selColor
-						PreviewBox.BackgroundColor3 = selColor
 						HexBox.Text               = colorToHex(selColor)
 						SVCursor.BackgroundColor3 = selColor
 						cfg.Callback(selColor)
@@ -1546,6 +1536,8 @@ local function InitJWareUI()
 
 					-- ── Open / Close helpers ───────────────────────────────────
 					local function positionPanel()
+						-- Defer one frame so AbsolutePosition is populated
+						RunService.RenderStepped:Wait()
 						local swAbs = Swatch.AbsolutePosition
 						local swSz  = Swatch.AbsoluteSize
 						local px    = swAbs.X - PANEL_W + swSz.X
@@ -1575,7 +1567,7 @@ local function InitJWareUI()
 							activeColorPicker.close()
 						end
 						isOpen = true
-						positionPanel()
+						task.spawn(positionPanel)
 						commitColor()
 						PickerPanel.Visible = true
 						activeColorPicker = { _token = myToken, close = closePicker }
