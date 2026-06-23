@@ -922,6 +922,7 @@ local function InitJWareUI()
 					addStroke(ListFrame, Theme.OutlineColor)
 
 					-- Scrolling if more than MAX_VISIBLE items
+					local itemParent = ListFrame  -- default: items go directly in ListFrame
 					if #cfg.Options > MAX_VISIBLE then
 						local scroll = Instance.new("ScrollingFrame")
 						scroll.Name                  = "Scroll"
@@ -933,17 +934,12 @@ local function InitJWareUI()
 						scroll.ScrollBarImageColor3  = Theme.MainColor
 						scroll.ZIndex                = 301
 						scroll.Parent                = ListFrame
-						-- redirect layout into scroll
-						local ListLayout2 = Instance.new("UIListLayout")
-						ListLayout2.SortOrder = Enum.SortOrder.LayoutOrder
-						ListLayout2.Padding   = UDim.new(0, 0)
-						ListLayout2.Parent    = scroll
-						-- expose scroll as the item parent
-						ListFrame._itemParent = scroll
-					end
-
-					local itemParent = ListFrame._itemParent or ListFrame
-					if itemParent == ListFrame then
+						local ScrollLayout = Instance.new("UIListLayout")
+						ScrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
+						ScrollLayout.Padding   = UDim.new(0, 0)
+						ScrollLayout.Parent    = scroll
+						itemParent = scroll  -- items go into the scroll frame
+					else
 						local ListLayout = Instance.new("UIListLayout")
 						ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 						ListLayout.Padding   = UDim.new(0, 0)
