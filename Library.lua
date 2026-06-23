@@ -960,12 +960,17 @@ local function InitJWareUI()
 					end
 
 					local expanded    = false
+					local dropJustOpened = false   -- ignore the same click that opened the list
 					local selected    = cfg.Multi and cfg.Default or (cfg.Default[1] or nil)
 					local optButtons  = {}
 
 					local function setExpanded(state)
 						expanded = state
-						if state then task.spawn(positionListFrame) end
+						if state then
+							dropJustOpened = true
+							task.spawn(positionListFrame)
+							task.defer(function() dropJustOpened = false end)
+						end
 						ListFrame.Visible = state
 						Indicator.Text    = state and "▲" or "▼"
 						tween(DropFrame, { BackgroundColor3 = state and Theme.MainColor or COL_ELEM_BG })
@@ -974,6 +979,7 @@ local function InitJWareUI()
 					-- Close on outside click
 					UserInputService.InputBegan:Connect(function(i)
 						if not expanded then return end
+						if dropJustOpened then return end
 						if i.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
 						local mp = i.Position
 						local lp = ListFrame.AbsolutePosition
@@ -1540,12 +1546,16 @@ local function InitJWareUI()
 						RunService.RenderStepped:Wait()
 						local swAbs = Swatch.AbsolutePosition
 						local swSz  = Swatch.AbsoluteSize
-						local px    = swAbs.X - PANEL_W + swSz.X
-						local py    = swAbs.Y + swSz.Y + 4
-						-- Keep within viewport
-						if px < 4 then px = 4 end
+						-- Place panel to the RIGHT of the swatch
+						local px = swAbs.X + swSz.X + 4
+						local py = swAbs.Y + swSz.Y * 0.5 - PANEL_H * 0.5
+						-- Clamp within viewport
+						if px + PANEL_W > VIEWPORT.X - 4 then
+							px = swAbs.X - PANEL_W - 4
+						end
+						if py < 4 then py = 4 end
 						if py + PANEL_H > VIEWPORT.Y - 4 then
-							py = swAbs.Y - PANEL_H - 4
+							py = VIEWPORT.Y - PANEL_H - 4
 						end
 						PickerPanel.Position = UDim2.fromOffset(px, py)
 					end
@@ -1561,16 +1571,20 @@ local function InitJWareUI()
 						end
 					end
 
+					local pickerJustOpened = false  -- ignore same-click that opened the picker
+
 					local function openPicker()
 						-- Close previously open picker
 						if activeColorPicker and activeColorPicker.close then
 							activeColorPicker.close()
 						end
 						isOpen = true
+						pickerJustOpened = true
 						task.spawn(positionPanel)
 						commitColor()
 						PickerPanel.Visible = true
 						activeColorPicker = { _token = myToken, close = closePicker }
+						task.defer(function() pickerJustOpened = false end)
 					end
 
 					-- ── Swatch click toggles panel ─────────────────────────────
@@ -1666,6 +1680,7 @@ local function InitJWareUI()
 					-- ── Close on click outside ─────────────────────────────────
 					UserInputService.InputBegan:Connect(function(i)
 						if not isOpen then return end
+						if pickerJustOpened then return end
 						if i.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
 						-- Check if click is inside panel or swatch
 						local mp = i.Position
